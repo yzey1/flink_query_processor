@@ -18,6 +18,7 @@
 
 package com.yzey1;
 
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 /**
@@ -58,7 +59,15 @@ public class StreamingJob {
 		 *
 		 */
 
+		// Read data from a table file
+		String inputPath = "src/main/resources";
+		DataStream<String> data = env.readTextFile(inputPath);
+
+		//
+
+
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
+
 	}
 }
