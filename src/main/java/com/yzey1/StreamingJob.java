@@ -18,8 +18,14 @@
 
 package com.yzey1;
 
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -36,35 +42,25 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 public class StreamingJob {
 
 	public static void main(String[] args) throws Exception {
+
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		/*
-		 * Here, you can start creating your execution plan for Flink.
-		 *
-		 * Start with getting some data from the environment, like
-		 * 	env.readTextFile(textPath);
-		 *
-		 * then, transform the resulting DataStream<String> using operations
-		 * like
-		 * 	.filter()
-		 * 	.flatMap()
-		 * 	.join()
-		 * 	.coGroup()
-		 *
-		 * and many more.
-		 * Have a look at the programming guide for the Java API:
-		 *
-		 * http://flink.apache.org/docs/latest/apis/streaming/index.html
-		 *
-		 */
+		// Set the parallelism to 1
+		env.setParallelism(1);
 
 		// Read data from a table file
-		String inputPath = "src/main/resources";
-		DataStream<String> data = env.readTextFile(inputPath);
+		String inputPath = "src/main/resources/data";
+		DataStream<String> customer = env.readTextFile(inputPath+"/customer.tbl");
+//		DataStream<String> lineitem = env.readTextFile(inputPath+"/lineitem.tbl");
+//		DataStream<String> nation = env.readTextFile(inputPath+"/nation.tbl");
+//		DataStream<String> orders = env.readTextFile(inputPath+"/orders.tbl");
+//		DataStream<String> part = env.readTextFile(inputPath+"/part.tbl");
 
-		//
-
+		// Data Processing
+		// print the result each time
+		SinkFunction<String> printSink = new PrintSinkFunction<>();
+		customer.addSink(printSink);
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
