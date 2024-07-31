@@ -46,18 +46,16 @@ public class StreamingJob {
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		// Set the parallelism to 1
+		// set the parallelism to 1
 		env.setParallelism(1);
 
-		// Read data from a table file
+		// read data
 		String inputPath = "src/main/resources/data";
-		DataStream<String> customer = env.readTextFile(inputPath+"/customer.tbl");
-//		DataStream<String> lineitem = env.readTextFile(inputPath+"/lineitem.tbl");
-//		DataStream<String> nation = env.readTextFile(inputPath+"/nation.tbl");
-//		DataStream<String> orders = env.readTextFile(inputPath+"/orders.tbl");
-//		DataStream<String> part = env.readTextFile(inputPath+"/part.tbl");
+		DataStream<String> customer = env.readTextFile(inputPath+"/ops_init.txt");
 
-		// Data Processing
+		// parse the data, group by key, and sum the values
+
+
 		// print the result each time
 		SinkFunction<String> printSink = new PrintSinkFunction<>();
 		customer.addSink(printSink);
@@ -66,4 +64,15 @@ public class StreamingJob {
 		env.execute("Flink Streaming Java API Skeleton");
 
 	}
+
+
+// 	public static void main(String[] args) {
+//         // Create a list to store all the column names of the tables
+//         List<String> columnNames = new ArrayList<>();
+
+// 		List<String> colname_customer = Arrays.asList("C_CUSTKEY", "C_NAME", "C_ADDRESS", "C_NATIONKEY", "C_PHONE", "C_ACCTBAL", "C_MKTSEGMENT", "C_COMMENT");
+// 		List<String> colname_orders = Arrays.asList("O_ORDERKEY", "O_CUSTKEY", "O_ORDERSTATUS", "O_TOTALPRICE", "O_ORDERDATE", "O_ORDERPRIORITY", "O_CLERK", "O_SHIPPRIORITY", "O_COMMENT");
+// 		List<String> colname_nation = Arrays.asList("N_NATIONKEY", "N_NAME", "N_REGIONKEY", "N_COMMENT");
+// 		List<String> colname_lineitem = Arrays.asList("L_ORDERKEY", "L_PARTKEY", "L_SUPPKEY", "L_LINENUMBER", "L_QUANTITY", "L_EXTENDEDPRICE", "L_DISCOUNT", "L_TAX", "L_RETURNFLAG", "L_LINESTATUS", "L_SHIPDATE", "L_COMMITDATE", "L_RECEIPTDATE", "L_SHIPINSTRUCT", "L_SHIPMODE", "L_COMMENT");
+// 	}
 }
