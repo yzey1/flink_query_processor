@@ -19,13 +19,14 @@
 package com.yzey1;
 
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.tuple.Tuple;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -45,27 +46,90 @@ public class StreamingJob {
 
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
+//		StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+//
 		// set the parallelism to 1
 		env.setParallelism(1);
 
 		// read data
 		String inputPath = "src/main/resources/data";
-		DataStream<String> customer = env.readTextFile(inputPath+"/ops_init.txt");
+		DataStream<String> inputData = env.readTextFile(inputPath+"/ops_init.txt");
 
-		// parse the data, group by key, and sum the values
+		// parse data
+		StreamingJob sj = new StreamingJob();
+		SingleOutputStreamOperator<Tuple2<String, Object[]>> parsedData = sj.parseData(inputData);
+
+		// group by key
+		KeyedStream<Tuple2<String, Object[]>, String> groupedData = parsedData.keyBy(t -> t.f0);
+
+		// process data
+		SingleOutputStreamOperator<Tuple2<String, Object[]>> processedData = groupedData.map(new MapFunction<Tuple2<String, Object[]>, Tuple2<String, Object[]>>() {
+			@Override
+			public Tuple2<String, Object[]> map(Tuple2<String, Object[]> value) throws Exception {
+				String key = value.f0;
+				Object[] data = value.f1;
+
+				String op = key.substring(0, 1);
+				String table = key.substring(1);
+
+				Tuple2<String, Object[]> result = null;
+
+				// process data based on operation and table
+				switch (table) {
+					case "nation":
+						// process data for Nation
+						result = NationProcessFunction.process(data);
+						// print processing class
+						System.out.println("Running NationProcessFunction class.");
+					case "customer":
+						// process data for Customer
+						result = CustomerProcessFunction.process(data);
+						// print processing class
+						System.out.println("Running CustomerProcessFunction class.");
+					case "orders":
+						// process data for Orders
+						result = OrdersProcessFunction.process(data);
+						// print processing class
+						System.out.println("Running OrdersProcessFunction class.");
+					case "lineitem":
+						// process data for Lineitem
+						result = LineitemProcessFunction.process(data);
+						// print processing class
+						System.out.println("Running LineitemProcessFunction class.");
+//					default:
+						// default processing
+//						result = new Tuple2<>(key, data);
+				}
+
+				return result;
+			}
+		});
 
 
 		// print the result each time
-		SinkFunction<String> printSink = new PrintSinkFunction<>();
-		customer.addSink(printSink);
+//		SinkFunction<Tuple2<String, Object[]>> printSink = new PrintSinkFunction<>();
+//		groupedData.addSink(printSink);
+		// print the key of group data
+		SinkFunction<Tuple2<String, Object[]>> printSink = new PrintSinkFunction<>();
+		processedData.addSink(printSink);
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
 
 	}
 
-	private SingleOutputStreamOperator
+	private SingleOutputStreamOperator<Tuple2<String, Object[]>> parseData(DataStream<String> inputData) {
+        return inputData.map(new MapFunction<String, Tuple2<String, Object[]>>() {
+			@Override
+			public Tuple2<String, Object[]> map(String s) throws Exception {
+				String[] split_line = s.split(",");
+				String op_table = split_line[0]+split_line[1];
+				Object[] data = split_line[2].split("\\|");
+				// return op_table is the key, and data is the value
+				return new Tuple2<>(op_table, data);
+			}
+		});
+	}
 
 
 }
