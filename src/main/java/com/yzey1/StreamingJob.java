@@ -18,15 +18,19 @@
 
 package com.yzey1;
 
-import org.apache.flink.api.common.functions.MapFunction;
+import java.util.Arrays;
+import com.yzey1.DataTuple.*;
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -41,13 +45,16 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
  * method, change the respective entry in the POM.xml file (simply search for 'mainClass').
  */
 public class StreamingJob {
+	public static final OutputTag<Tuple2<String, DataTuple>> nationTag = new OutputTag<Tuple2<String, DataTuple>>("nation"){};
+	public static final OutputTag<Tuple2<String, DataTuple>> customerTag = new OutputTag<Tuple2<String, DataTuple>>("customer"){};
+	public static final OutputTag<Tuple2<String, DataTuple>> ordersTag = new OutputTag<Tuple2<String, DataTuple>>("orders"){};
+	public static final OutputTag<Tuple2<String, DataTuple>> lineitemTag = new OutputTag<Tuple2<String, DataTuple>>("lineitem"){};
 
 	public static void main(String[] args) throws Exception {
 
 		// set up the streaming execution environment
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//		StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
-//
+
 		// set the parallelism to 1
 		env.setParallelism(1);
 
@@ -55,81 +62,66 @@ public class StreamingJob {
 		String inputPath = "src/main/resources/data";
 		DataStream<String> inputData = env.readTextFile(inputPath+"/ops_init.txt");
 
-		// parse data
-		StreamingJob sj = new StreamingJob();
-		SingleOutputStreamOperator<Tuple2<String, Object[]>> parsedData = sj.parseData(inputData);
 
-		// group by key
-		KeyedStream<Tuple2<String, Object[]>, String> groupedData = parsedData.keyBy(t -> t.f0);
+
+		// preprocess data to get the key
+		SingleOutputStreamOperator<Tuple2<String, DataTuple>> inputData1 = inputData.process(new splitStream());
 
 		// process data
-		SingleOutputStreamOperator<Tuple2<String, Object[]>> processedData = groupedData.map(new MapFunction<Tuple2<String, Object[]>, Tuple2<String, Object[]>>() {
-			@Override
-			public Tuple2<String, Object[]> map(Tuple2<String, Object[]> value) throws Exception {
-				String key = value.f0;
-				Object[] data = value.f1;
+		DataStream<Tuple2<String, DataTuple>> orders = inputData1.getSideOutput(ordersTag);
+		DataStream<Tuple2<String, DataTuple>> customer = inputData1.getSideOutput(customerTag);
+		DataStream<Tuple2<String, DataTuple>> nation = inputData1.getSideOutput(nationTag);
+		DataStream<Tuple2<String, DataTuple>> lineitem = inputData1.getSideOutput(lineitemTag);
 
-				String op = key.substring(0, 1);
-				String table = key.substring(1);
+		// process nation
+		DataStream<Tuple2<String, DataTuple>> processedNation = nation
+				.keyBy(t -> t.f1.fk_value)
+				.process(new NationProcessFunction());
+		DataStream<Tuple2<String, DataTuple>> customer1 = processedNation.connect(customer)
+				.keyBy(t -> t.f1.fk_value, t -> t.f1.fk_value)
+				.process(new CustomerProcessFunction());
+		// aggregate the results
 
-				Tuple2<String, Object[]> result = null;
-
-				// process data based on operation and table
-				switch (table) {
-					case "nation":
-						// process data for Nation
-						result = NationProcessFunction.process(data);
-						// print processing class
-						System.out.println("Running NationProcessFunction class.");
-					case "customer":
-						// process data for Customer
-						result = CustomerProcessFunction.process(data);
-						// print processing class
-						System.out.println("Running CustomerProcessFunction class.");
-					case "orders":
-						// process data for Orders
-						result = OrdersProcessFunction.process(data);
-						// print processing class
-						System.out.println("Running OrdersProcessFunction class.");
-					case "lineitem":
-						// process data for Lineitem
-						result = LineitemProcessFunction.process(data);
-						// print processing class
-						System.out.println("Running LineitemProcessFunction class.");
-//					default:
-						// default processing
-//						result = new Tuple2<>(key, data);
-				}
-
-				return result;
-			}
-		});
 
 
 		// print the result each time
-//		SinkFunction<Tuple2<String, Object[]>> printSink = new PrintSinkFunction<>();
-//		groupedData.addSink(printSink);
-		// print the key of group data
-		SinkFunction<Tuple2<String, Object[]>> printSink = new PrintSinkFunction<>();
-		processedData.addSink(printSink);
+
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
 
 	}
 
-	private SingleOutputStreamOperator<Tuple2<String, Object[]>> parseData(DataStream<String> inputData) {
-        return inputData.map(new MapFunction<String, Tuple2<String, Object[]>>() {
-			@Override
-			public Tuple2<String, Object[]> map(String s) throws Exception {
-				String[] split_line = s.split(",");
-				String op_table = split_line[0]+split_line[1];
-				Object[] data = split_line[2].split("\\|");
-				// return op_table is the key, and data is the value
-				return new Tuple2<>(op_table, data);
+	private static class splitStream extends ProcessFunction<String, Tuple2<String, DataTuple>> {
+		@Override
+		public void processElement(String value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
+			String[] split_line = value.split("\\|");
+			String op = split_line[0];
+			String table = split_line[1];
+			Object[] data = Arrays.copyOfRange(split_line, 2, split_line.length);
+			DataTuple dt = null;
+			OutputTag<Tuple2<String, DataTuple>> outputTag = null;
+			switch (table) {
+				case "orders":
+					dt = new order(data);
+					outputTag = ordersTag;
+					break;
+				case "customer":
+					dt = new customer(data);
+					outputTag = customerTag;
+					break;
+				case "nation":
+					dt = new nation(data);
+					outputTag = nationTag;
+					break;
+				case "lineitem":
+					dt = new lineitem(data);
+					outputTag = lineitemTag;
+					break;
+				default:
+					return;
 			}
-		});
+			ctx.output(outputTag, new Tuple2<String, DataTuple>(op, dt));
+		}
 	}
-
-
 }

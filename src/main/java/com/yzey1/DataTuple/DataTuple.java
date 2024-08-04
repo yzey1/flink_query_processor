@@ -5,22 +5,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class DataTuple {
-    private String[] primaryKey;
-    private String[] foreignKeys;
-    private Map<String, Object> fields;
+    public String[] primaryKey;
+    public String[] foreignKeys;
+    public Map<String, Object> fields;
+    public String fk_value;
 
     public DataTuple(String[] primary_key, String[] foreign_keys) {
         this.primaryKey = primary_key;
         this.foreignKeys = foreign_keys;
         this.fields = new HashMap<>();
-    }
-
-    public String[] getPrimaryKey() {
-        return primaryKey;
-    }
-
-    public String[] getForeignKeys() {
-        return foreignKeys;
     }
 
     public Object getField(String fieldName) {
@@ -32,6 +25,7 @@ public abstract class DataTuple {
     }
 
     public abstract String[] getFieldNames() ;
+    public abstract String getTableName() ;
 
     @Override
     public boolean equals(Object o) {
