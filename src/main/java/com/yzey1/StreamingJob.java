@@ -20,11 +20,7 @@ package com.yzey1;
 
 import java.util.Arrays;
 import com.yzey1.DataTuple.*;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -77,15 +73,22 @@ public class StreamingJob {
 		DataStream<Tuple2<String, DataTuple>> processedNation = nation
 				.keyBy(t -> t.f1.fk_value)
 				.process(new NationProcessFunction());
-		DataStream<Tuple2<String, DataTuple>> customer1 = processedNation.connect(customer)
+		DataStream<Tuple2<String, DataTuple>> processedCustomer = processedNation.connect(customer)
 				.keyBy(t -> t.f1.fk_value, t -> t.f1.fk_value)
 				.process(new CustomerProcessFunction());
+		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
+				.keyBy(t -> t.f1.fk_value, t -> t.f1.fk_value)
+				.process(new OrdersProcessFunction());
+		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
+				.keyBy(t -> t.f1.fk_value, t -> t.f1.fk_value)
+				.process(new LineitemProcessFunction());
+
 		// aggregate the results
-
-
+		DataStream<Tuple2<String, DataTuple>> result = processedLineitem.keyBy(t -> t.f1.fk_value)
+				.process(new AggregationProcessFunction());
 
 		// print the result each time
-
+		result.print();
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
