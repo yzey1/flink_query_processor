@@ -23,6 +23,15 @@ public class customer extends DataTuple {
         this.fk_value = getField(FOREIGN_KEY).toString();
     }
 
+    public customer(customer c){
+        super(PRIMARY_KEY, FOREIGN_KEY);
+        for (String field : FIELD_NAMES) {
+            setField(field, c.getField(field));
+        }
+        this.pk_value = getField(PRIMARY_KEY).toString();
+        this.fk_value = getField(FOREIGN_KEY).toString();
+    }
+
     @Override
     public String[] getFieldNames() {
         return FIELD_NAMES;
