@@ -11,18 +11,16 @@ public class customer extends DataTuple {
             "C_MKTSEGMENT",
             "C_COMMENT"
     };
-    public static final String[] PRIMARY_KEY = {"C_CUSTKEY"};
-    public static final String[] FOREIGN_KEYS = {"C_NATIONKEY"};
+    public static final String PRIMARY_KEY = "C_CUSTKEY";
+    public static final String FOREIGN_KEY = "C_NATIONKEY";
 
     public customer(Object[] data){
-        super(PRIMARY_KEY, FOREIGN_KEYS);
+        super(PRIMARY_KEY, FOREIGN_KEY);
         for (int i = 0; i < FIELD_NAMES.length; i++) {
             setField(FIELD_NAMES[i], data[i]);
         }
-        this.fk_value = "";
-        for (String foreignKey : FOREIGN_KEYS) {
-            this.fk_value += getField(foreignKey).toString();
-        }
+        this.pk_value = getField(PRIMARY_KEY).toString();
+        this.fk_value = getField(FOREIGN_KEY).toString();
     }
 
     @Override

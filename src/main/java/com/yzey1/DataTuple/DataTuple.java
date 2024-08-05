@@ -1,18 +1,19 @@
 package com.yzey1.DataTuple;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public abstract class DataTuple {
-    public String[] primaryKey;
-    public String[] foreignKeys;
+    public String PRIMARY_KEY;
+    public String FOREIGN_KEY;
     public Map<String, Object> fields;
+    public String pk_value;
     public String fk_value;
 
-    public DataTuple(String[] primary_key, String[] foreign_keys) {
-        this.primaryKey = primary_key;
-        this.foreignKeys = foreign_keys;
+    public DataTuple(String primary_key, String foreign_key) {
+        this.PRIMARY_KEY = primary_key;
+        this.FOREIGN_KEY = foreign_key;
         this.fields = new HashMap<>();
     }
 
@@ -32,11 +33,11 @@ public abstract class DataTuple {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DataTuple dataTuple = (DataTuple) o;
-        return primaryKey == dataTuple.primaryKey;
+        return Objects.equals(PRIMARY_KEY, dataTuple.PRIMARY_KEY);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(primaryKey);
+        return PRIMARY_KEY.hashCode();
     }
 }

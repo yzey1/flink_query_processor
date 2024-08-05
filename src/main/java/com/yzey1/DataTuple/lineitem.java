@@ -19,18 +19,16 @@ public class lineitem extends DataTuple {
             "L_SHIPMODE",
             "L_COMMENT"
     };
-    public static final String[] PRIMARY_KEY = {"L_ORDERKEY","L_LINENUMBER"};
-    public static final String[] FOREIGN_KEYS = {"L_ORDERKEY"};
+    public static final String PRIMARY_KEY = "L_ORDERKEY";
+    public static final String FOREIGN_KEY = "L_ORDERKEY";
 
     public lineitem(Object[] data) {
-        super(PRIMARY_KEY, FOREIGN_KEYS);
+        super(PRIMARY_KEY, FOREIGN_KEY);
         for (int i = 0; i < FIELD_NAMES.length; i++) {
             setField(FIELD_NAMES[i], data[i]);
         }
-        this.fk_value = "";
-        for (String key : FOREIGN_KEYS) {
-            this.fk_value += getField(key).toString();
-        }
+        this.pk_value = getField(PRIMARY_KEY).toString();
+        this.fk_value = getField(FOREIGN_KEY).toString();
     }
 
     @Override

@@ -17,26 +17,37 @@ import java.util.Set;
 public class NationProcessFunction extends KeyedProcessFunction<String, Tuple2<String, DataTuple>, Tuple2<String, DataTuple>> {
 
     private ValueState<HashSet<nation>> aliveTuples;
-    private ValueState<Integer> aliveCount;
 
     @Override
     public void open(Configuration parameters) throws Exception {
         TypeInformation<HashSet<nation>> typeInformation = TypeInformation.of(new TypeHint<HashSet<nation>>() {});
-        ValueStateDescriptor<HashSet<nation>> descriptor = new ValueStateDescriptor<>("Alive Nation Tuples", typeInformation);
-        aliveTuples = getRuntimeContext().getState(descriptor);
+        ValueStateDescriptor<HashSet<nation>> aliveTupleDescriptor = new ValueStateDescriptor<>("Alive Nation Tuples", typeInformation);
+        aliveTuples = getRuntimeContext().getState(aliveTupleDescriptor);
     }
 
-    public boolean isAlive(nation tuple) throws Exception {
+
+    // select tuple satisfying the where clause condition
+    public boolean checkCondition(DataTuple tuple) {
         return true;
     }
 
     @Override
     public void processElement(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
         System.out.println("Running NationProcessFunction class.");
+        String op_type = value.f0;
+        DataTuple tuple = value.f1;
+
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
         }
-        aliveTuples.value().add((nation) value.f1);
-        out.collect(new Tuple2<String, DataTuple>("nation", value.f1));
+
+        if (checkCondition((nation) tuple)) {
+            if (op_type.equals("+")){
+                aliveTuples.value().add((nation) tuple);
+            } else if (op_type.equals("-")) {
+                aliveTuples.value().remove((nation) tuple);
+            }
+            out.collect(new Tuple2<>(op_type, tuple));
+        }
     }
 }

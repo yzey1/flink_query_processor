@@ -12,23 +12,21 @@ public class order extends DataTuple {
             "O_SHIPPRIORITY",
             "O_COMMENT"
     };
-    public static final String[] PRIMARY_KEY = {"O_ORDERKEY"};
-    public static final String[] FOREIGN_KEYS = {"O_CUSTKEY"};
+    public static final String PRIMARY_KEY = "O_ORDERKEY";
+    public static final String FOREIGN_KEY = "O_CUSTKEY";
     public String fk_value;
 
     public order(){
-        super(PRIMARY_KEY, FOREIGN_KEYS);
+        super(PRIMARY_KEY, FOREIGN_KEY);
     }
 
     public order(Object[] data){
-        super(PRIMARY_KEY, FOREIGN_KEYS);
+        super(PRIMARY_KEY, FOREIGN_KEY);
         for (int i = 0; i < FIELD_NAMES.length; i++) {
             setField(FIELD_NAMES[i], data[i]);
         }
-        this.fk_value = "";
-        for (String key : FOREIGN_KEYS) {
-            this.fk_value += getField(key);
-        }
+        this.pk_value = getField(PRIMARY_KEY).toString();
+        this.fk_value = getField(FOREIGN_KEY).toString();
     }
 
     @Override

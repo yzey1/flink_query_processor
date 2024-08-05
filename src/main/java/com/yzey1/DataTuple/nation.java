@@ -7,18 +7,16 @@ public class nation extends DataTuple {
             "N_REGIONKEY",
             "N_COMMENT"
     };
-    public static final String[] PRIMARY_KEY = {"N_NATIONKEY"};
-    public static final String[] FOREIGN_KEYS = {"N_REGIONKEY"};
+    public static final String PRIMARY_KEY = "N_NATIONKEY";
+    public static final String FOREIGN_KEY = "N_REGIONKEY";
 
     public nation(Object[] data){
-        super(PRIMARY_KEY, FOREIGN_KEYS);
+        super(PRIMARY_KEY, FOREIGN_KEY);
         for (int i = 0; i < FIELD_NAMES.length; i++) {
             setField(FIELD_NAMES[i], data[i]);
         }
-        this.fk_value = "";
-        for (String key : FOREIGN_KEYS) {
-            this.fk_value += getField(key);
-        }
+        this.pk_value = getField(PRIMARY_KEY).toString();
+        this.fk_value = getField(FOREIGN_KEY).toString();
     }
 
     @Override
