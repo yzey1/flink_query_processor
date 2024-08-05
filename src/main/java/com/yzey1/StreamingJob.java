@@ -58,8 +58,6 @@ public class StreamingJob {
 		String inputPath = "src/main/resources/data";
 		DataStream<String> inputData = env.readTextFile(inputPath+"/ops_init.txt");
 
-
-
 		// preprocess data to get the key
 		SingleOutputStreamOperator<Tuple2<String, DataTuple>> inputData1 = inputData.process(new splitStream());
 
@@ -74,13 +72,13 @@ public class StreamingJob {
 				.keyBy(t -> t.f1.fk_value)
 				.process(new NationProcessFunction());
 		DataStream<Tuple2<String, DataTuple>> processedCustomer = processedNation.connect(customer)
-				.keyBy(t -> t.f1.fk_value, t -> t.f1.fk_value)
+				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
 				.process(new CustomerProcessFunction());
 		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
-				.keyBy(t -> t.f1.fk_value, t -> t.f1.fk_value)
+				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
 				.process(new OrdersProcessFunction());
 		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
-				.keyBy(t -> t.f1.fk_value, t -> t.f1.fk_value)
+				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
 				.process(new LineitemProcessFunction());
 
 		// aggregate the results
@@ -102,8 +100,8 @@ public class StreamingJob {
 			String op = split_line[0];
 			String table = split_line[1];
 			Object[] data = Arrays.copyOfRange(split_line, 2, split_line.length);
-			DataTuple dt = null;
-			OutputTag<Tuple2<String, DataTuple>> outputTag = null;
+			DataTuple dt;
+			OutputTag<Tuple2<String, DataTuple>> outputTag;
 			switch (table) {
 				case "orders":
 					dt = new order(data);
@@ -124,7 +122,7 @@ public class StreamingJob {
 				default:
 					return;
 			}
-			ctx.output(outputTag, new Tuple2<String, DataTuple>(op, dt));
+			ctx.output(outputTag, new Tuple2<>(op, dt));
 		}
 	}
 }
