@@ -74,19 +74,20 @@ public class StreamingJob {
 		DataStream<Tuple2<String, DataTuple>> processedCustomer = processedNation.connect(customer)
 				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
 				.process(new CustomerProcessFunction());
-		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
-				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
-				.process(new OrdersProcessFunction());
-		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
-				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
-				.process(new LineitemProcessFunction());
+//		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
+//				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
+//				.process(new OrdersProcessFunction());
+//		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
+//				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
+//				.process(new LineitemProcessFunction());
 
 		// aggregate the results
-		DataStream<Tuple2<String, DataTuple>> result = processedLineitem.keyBy(t -> t.f1.fk_value)
-				.process(new AggregationProcessFunction());
+//		DataStream<Tuple2<String, DataTuple>> result = processedLineitem.keyBy(t -> t.f1.fk_value)
+//				.process(new AggregationProcessFunction());
 
 		// print the result each time
-		result.print();
+		processedNation.print();
+//		result.print();
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
