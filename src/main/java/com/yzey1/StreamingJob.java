@@ -56,7 +56,7 @@ public class StreamingJob {
 
 		// read data
 		String inputPath = "src/main/resources/data";
-		DataStream<String> inputData = env.readTextFile(inputPath+"/ops_init.txt");
+		DataStream<String> inputData = env.readTextFile(inputPath+"/ops_test.txt");
 
 		// preprocess data to get the key
 		SingleOutputStreamOperator<Tuple2<String, DataTuple>> inputData1 = inputData.process(new splitStream());
@@ -86,7 +86,7 @@ public class StreamingJob {
 //				.process(new AggregationProcessFunction());
 
 		// print the result each time
-		processedNation.print();
+		processedCustomer.print();
 //		result.print();
 
 		// execute program
@@ -123,6 +123,7 @@ public class StreamingJob {
 				default:
 					return;
 			}
+			System.out.println("Processing: " + op + " " + table + " " + dt);
 			ctx.output(outputTag, new Tuple2<>(op, dt));
 		}
 	}

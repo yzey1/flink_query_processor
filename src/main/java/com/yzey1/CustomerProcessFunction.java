@@ -39,9 +39,6 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
         String op_type = value.f0;
         DataTuple tuple = value.f1;
 
-        if (aliveTuples.value() == null) {
-            aliveTuples.update(new HashSet<>());
-        }
         if (aliveCount.value() == null) {
             aliveCount.update(0);
         }
@@ -54,8 +51,11 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
             prevTuple.clear();
             aliveCount.update(0);
         }
-        for (customer c : aliveTuples.value()) {
-            out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), c)));
+
+        if (aliveTuples.value() != null) {
+            for (customer c : aliveTuples.value()) {
+                out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), c)));
+            }
         }
     }
 
@@ -67,6 +67,9 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
+        }
+        if (aliveCount.value() == null) {
+            aliveCount.update(0);
         }
 
         if (checkCondition(tuple) && aliveCount.value() == 1) {
