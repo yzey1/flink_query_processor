@@ -1,13 +1,46 @@
 package com.yzey1;
 
 import com.yzey1.DataTuple.DataTuple;
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
-public class AggregationProcessFunction extends KeyedProcessFunction<String, Tuple2<String, DataTuple>, Tuple2<String, DataTuple>> {
+import java.util.Arrays;
+import java.util.List;
+
+public class AggregationProcessFunction extends KeyedProcessFunction<String, Tuple2<String, DataTuple>, Double> {
+
+    ValueState<Double> currentValue;
+    List<String> groupByFields = Arrays.asList("C_CUSTKEY", "C_NAME", "C_ACCTBAL", "C_PHONE", "N_NAME", "C_ADDRESS", "C_COMMENT");
+    String aggregationField = "revenue";
+
     @Override
-    public void processElement(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
-        out.collect(value);
+    public void open(org.apache.flink.configuration.Configuration parameters) throws Exception {
+        currentValue = getRuntimeContext().getState(new ValueStateDescriptor<>("Old Value", Double.class));
+    }
+
+    @Override
+    public void processElement(Tuple2<String, DataTuple> value, Context ctx, Collector<Double> out) throws Exception {
+
+        String op_type = value.f0;
+        DataTuple tuple = value.f1;
+
+        if(currentValue.value() == null) {
+            currentValue.update(0.0);
+        }
+
+        double l_extendedprice = Double.parseDouble(value.f1.getField("L_EXTENDEDPRICE").toString());
+        double l_discount = Double.parseDouble(value.f1.getField("L_DISCOUNT").toString());
+        Double delta = l_extendedprice * (1 - l_discount);
+
+        if (op_type.equals("+")) {
+            currentValue.update(currentValue.value() + delta);
+        } else if (op_type.equals("-")) {
+            currentValue.update(currentValue.value() - delta);
+        }
+
+        out.collect(currentValue.value());
     }
 }

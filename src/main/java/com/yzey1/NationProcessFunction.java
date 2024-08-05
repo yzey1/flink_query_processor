@@ -33,7 +33,7 @@ public class NationProcessFunction extends KeyedProcessFunction<String, Tuple2<S
 
     @Override
     public void processElement(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
-        System.out.println("Running NationProcessFunction class.");
+//        System.out.println("Running NationProcessFunction class.");
         String op_type = value.f0;
         DataTuple tuple = value.f1;
 

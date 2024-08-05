@@ -35,13 +35,17 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
 
     @Override
     public void processElement1(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
-        System.out.println("Running CustomerProcessFunction class.");
+
         String op_type = value.f0;
         DataTuple tuple = value.f1;
 
         if (aliveCount.value() == null) {
             aliveCount.update(0);
         }
+
+        System.out.println("process element 1");
+        System.out.println(value.f1.getField("N_NAME"));
+        System.out.println(aliveCount.value());
 
         if (op_type.equals("+")){
             prevTuple.update((nation) tuple);
@@ -57,11 +61,12 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
                 out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), c)));
             }
         }
+
     }
 
     @Override
     public void processElement2(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
-        System.out.println("Running CustomerProcessFunction class.");
+
         String op_type = value.f0;
         DataTuple tuple = value.f1;
 
@@ -72,6 +77,10 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
             aliveCount.update(0);
         }
 
+        System.out.println("process element 2");
+        System.out.println(value.f1.getField("C_NAME"));
+        System.out.println(aliveCount.value());
+
         if (checkCondition(tuple) && aliveCount.value() == 1) {
             if (op_type.equals("+")){
                 aliveTuples.value().add((customer) tuple);
@@ -80,6 +89,7 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
             }
             out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), (customer) tuple)));
         }
+
     }
 
     public customer getJoinedCustomer(nation nation, customer customer) {

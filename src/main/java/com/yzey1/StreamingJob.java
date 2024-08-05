@@ -58,13 +58,13 @@ public class StreamingJob {
 		String inputPath = "src/main/resources/data";
 		DataStream<String> inputData = env.readTextFile(inputPath+"/ops_test.txt");
 
-		// preprocess data to get the key
+		// parse line
 		SingleOutputStreamOperator<Tuple2<String, DataTuple>> inputData1 = inputData.process(new splitStream());
 
-		// process data
-		DataStream<Tuple2<String, DataTuple>> orders = inputData1.getSideOutput(ordersTag);
-		DataStream<Tuple2<String, DataTuple>> customer = inputData1.getSideOutput(customerTag);
+		// split data
 		DataStream<Tuple2<String, DataTuple>> nation = inputData1.getSideOutput(nationTag);
+		DataStream<Tuple2<String, DataTuple>> customer = inputData1.getSideOutput(customerTag);
+		DataStream<Tuple2<String, DataTuple>> orders = inputData1.getSideOutput(ordersTag);
 		DataStream<Tuple2<String, DataTuple>> lineitem = inputData1.getSideOutput(lineitemTag);
 
 		// process nation
@@ -74,12 +74,12 @@ public class StreamingJob {
 		DataStream<Tuple2<String, DataTuple>> processedCustomer = processedNation.connect(customer)
 				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
 				.process(new CustomerProcessFunction());
-//		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
-//				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
-//				.process(new OrdersProcessFunction());
-//		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
-//				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
-//				.process(new LineitemProcessFunction());
+		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
+				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
+				.process(new OrdersProcessFunction());
+		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
+				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
+				.process(new LineitemProcessFunction());
 
 		// aggregate the results
 //		DataStream<Tuple2<String, DataTuple>> result = processedLineitem.keyBy(t -> t.f1.fk_value)
