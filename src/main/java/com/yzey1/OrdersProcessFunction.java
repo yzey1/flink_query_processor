@@ -58,29 +58,23 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
-        }
-        if (aliveCount.value() == null) {
             aliveCount.update(0);
+            prevTuple.update(null);
         }
-
-        System.out.println("process element 1");
-        System.out.println(value.f1.getField("N_NAME"));
-        System.out.println(aliveCount.value());
 
         if (op_type.equals("+")){
             prevTuple.update((customer) tuple);
             aliveCount.update(aliveCount.value() + 1);
 
         } else if (op_type.equals("-")) {
-            prevTuple.clear();
-            aliveCount.update(0);
+            prevTuple.update(null);
+            aliveCount.update(aliveCount.value() - 1);
         }
 
-//        if (aliveTuples.value() != null) {
         for (order o : aliveTuples.value()) {
             out.collect(new Tuple2<>(op_type, getJoinedOrder(prevTuple.value(), o)));
+            System.out.println("Outputting: " + o.pk_value);
         }
-//        }
 
     }
 
@@ -97,17 +91,26 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
             aliveCount.update(0);
         }
 
-        System.out.println("process element 2");
-        System.out.println(value.f1.getField("C_NAME"));
-        System.out.println(aliveCount.value());
+//        System.out.println("process element order in order process function");
+//        System.out.println(value.f1.getField("O_ORDERKEY"));
+//        System.out.println(aliveCount.value());
 
-        if (checkCondition(tuple) && aliveCount.value() == 1) {
+        if (checkCondition(tuple)) {
             if (op_type.equals("+")){
                 aliveTuples.value().add((order) tuple);
+                System.out.println("Adding: " + tuple.pk_value);
+                if (aliveCount.value() == 1) {
+                    order newoutput = getJoinedOrder(prevTuple.value(), (order) tuple);
+                    out.collect(new Tuple2<>(op_type, newoutput));
+                }
             } else if (op_type.equals("-")) {
                 aliveTuples.value().remove((order) tuple);
+                System.out.println("Removing: " + tuple.pk_value);
+                if (aliveCount.value() == 1) {
+                    order newoutput = getJoinedOrder(prevTuple.value(), (order) tuple);
+                    out.collect(new Tuple2<>(op_type, newoutput));
+                }
             }
-            out.collect(new Tuple2<>(op_type, getJoinedOrder(prevTuple.value(), (order) tuple)));
         }
     }
 

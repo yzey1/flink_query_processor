@@ -1,9 +1,6 @@
 package com.yzey1;
 
-import com.yzey1.DataTuple.DataTuple;
-import com.yzey1.DataTuple.customer;
-import com.yzey1.DataTuple.lineitem;
-import com.yzey1.DataTuple.order;
+import com.yzey1.DataTuple.*;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.TypeHint;
@@ -40,31 +37,25 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
         String op_type = value.f0;
         DataTuple tuple = value.f1;
 
-        if (aliveCount.value() == null) {
-            aliveCount.update(0);
-        }
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
+            aliveCount.update(0);
+            prevTuple.update(null);
         }
-
-        System.out.println("process element 1");
-        System.out.println(value.f1.getField("N_NAME"));
-        System.out.println(aliveCount.value());
 
         if (op_type.equals("+")){
             prevTuple.update((order) tuple);
             aliveCount.update(aliveCount.value() + 1);
 
         } else if (op_type.equals("-")) {
-            prevTuple.clear();
-            aliveCount.update(0);
+            prevTuple.update(null);
+            aliveCount.update(aliveCount.value() - 1);
         }
 
-//        if (aliveTuples.value() != null) {
         for (lineitem l : aliveTuples.value()) {
             out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), l)));
+            System.out.println("Outputting: " + l.pk_value);
         }
-//        }
     }
 
     @Override
@@ -80,17 +71,27 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
             aliveCount.update(0);
         }
 
-        System.out.println("process element 2");
-        System.out.println(value.f1.getField("C_NAME"));
-        System.out.println(aliveCount.value());
+//        String ID = tuple.getField("L_ORDERKEY").toString();
+//        System.out.println("process element lineitem in lineitem process function");
+//        System.out.println(ID);
+//        System.out.println(aliveCount.value());
 
-        if (checkCondition(tuple) && aliveCount.value() == 1) {
+        if (checkCondition(tuple)) {
             if (op_type.equals("+")){
                 aliveTuples.value().add((lineitem) tuple);
+                System.out.println("Adding: " + tuple.pk_value);
+                if (aliveCount.value() == 1) {
+                    lineitem newoutput = getJoinedLineitem(prevTuple.value(), (lineitem) tuple);
+                    out.collect(new Tuple2<>(op_type, newoutput));
+                }
             } else if (op_type.equals("-")) {
                 aliveTuples.value().remove((lineitem) tuple);
+                System.out.println("Removing: " + tuple.pk_value);
+                if (aliveCount.value() == 1) {
+                    lineitem newoutput = getJoinedLineitem(prevTuple.value(), (lineitem) tuple);
+                    out.collect(new Tuple2<>(op_type, newoutput));
+                }
             }
-            out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), (lineitem) tuple)));
         }
     }
 

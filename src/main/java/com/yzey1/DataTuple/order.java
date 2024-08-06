@@ -14,8 +14,6 @@ public class order extends DataTuple {
     };
     public static final String PRIMARY_KEY = "O_ORDERKEY";
     public static final String FOREIGN_KEY = "O_CUSTKEY";
-    public String fk_value;
-    public String pk_value;
 
 //    public order(){
 //        super(PRIMARY_KEY, FOREIGN_KEY);
@@ -26,8 +24,8 @@ public class order extends DataTuple {
         for (int i = 0; i < FIELD_NAMES.length; i++) {
             setField(FIELD_NAMES[i], data[i]);
         }
-        this.pk_value = getField(PRIMARY_KEY).toString();
-        this.fk_value = getField(FOREIGN_KEY).toString();
+        setPk_value(getField(PRIMARY_KEY).toString());
+        setFk_value(getField(FOREIGN_KEY).toString());
     }
 
     @Override

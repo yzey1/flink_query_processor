@@ -8,8 +8,8 @@ public abstract class DataTuple {
     public String PRIMARY_KEY;
     public String FOREIGN_KEY;
     public Map<String, Object> fields;
-    public String pk_value = "";
-    public String fk_value = "";
+    public String pk_value;
+    public String fk_value;
 
     public DataTuple(String primary_key, String foreign_key) {
         this.PRIMARY_KEY = primary_key;
@@ -23,6 +23,14 @@ public abstract class DataTuple {
 
     public void setField(String fieldName, Object value) {
         fields.put(fieldName, value);
+    }
+
+    public void setPk_value(String pk_value){
+        this.pk_value = pk_value;
+    }
+
+    public void setFk_value(String fk_value){
+        this.fk_value = fk_value;
     }
 
     public abstract String[] getFieldNames() ;

@@ -31,8 +31,8 @@ public class AggregationProcessFunction extends KeyedProcessFunction<String, Tup
             currentValue.update(0.0);
         }
 
-        double l_extendedprice = Double.parseDouble(value.f1.getField("L_EXTENDEDPRICE").toString());
-        double l_discount = Double.parseDouble(value.f1.getField("L_DISCOUNT").toString());
+        double l_extendedprice = Double.parseDouble(tuple.getField("L_EXTENDEDPRICE").toString());
+        double l_discount = Double.parseDouble(tuple.getField("L_DISCOUNT").toString());
         Double delta = l_extendedprice * (1 - l_discount);
 
         if (op_type.equals("+")) {

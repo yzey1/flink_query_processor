@@ -39,31 +39,25 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
         String op_type = value.f0;
         DataTuple tuple = value.f1;
 
-        if (aliveCount.value() == null) {
-            aliveCount.update(0);
-        }
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
+            aliveCount.update(0);
+            prevTuple.update(null);
         }
-
-        System.out.println("process element 1");
-        System.out.println(value.f1.getField("N_NAME"));
-        System.out.println(aliveCount.value());
 
         if (op_type.equals("+")){
             prevTuple.update((nation) tuple);
             aliveCount.update(aliveCount.value() + 1);
 
         } else if (op_type.equals("-")) {
-            prevTuple.clear();
-            aliveCount.update(0);
+            prevTuple.update(null);
+            aliveCount.update(aliveCount.value() - 1);
         }
 
-//        if (aliveTuples.value() != null) {
         for (customer c : aliveTuples.value()) {
             out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), c)));
+            System.out.println("Outputting: " + c.pk_value);
         }
-//        }
 
     }
 
@@ -75,30 +69,33 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
-        }
-        if (aliveCount.value() == null) {
             aliveCount.update(0);
+            prevTuple.update(null);
         }
 
-        System.out.println("process element 2");
-        System.out.println(value.f1.getField("C_NAME"));
-        System.out.println(aliveCount.value());
-
-        if (checkCondition(tuple) && aliveCount.value() == 1) {
+        if (checkCondition(tuple)) {
             if (op_type.equals("+")){
                 aliveTuples.value().add((customer) tuple);
+                System.out.println("Adding: " + tuple.pk_value);
+                if (aliveCount.value() == 1) {
+                    customer newoutput = getJoinedCustomer(prevTuple.value(), (customer) tuple);
+                    out.collect(new Tuple2<>(op_type, newoutput));
+                }
             } else if (op_type.equals("-")) {
                 aliveTuples.value().remove((customer) tuple);
+                System.out.println("Removing: " + tuple.pk_value);
+                if (aliveCount.value() == 1) {
+                    customer newoutput = getJoinedCustomer(prevTuple.value(), (customer) tuple);
+                    out.collect(new Tuple2<>(op_type, newoutput));
+                }
             }
-            out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), (customer) tuple)));
         }
-
     }
 
     public customer getJoinedCustomer(nation n, customer c) {
-        c.setField("N_NAME", n.getField("N_NAME"));
-        c.pk_value = c.getField("C_CUSTKEY").toString();
-        return c;
+        customer newCustomer = new customer(c);
+        newCustomer.setField("N_NAME", n.getField("N_NAME"));
+        return newCustomer;
     }
 
 }

@@ -20,13 +20,20 @@ package com.yzey1;
 
 import java.util.Arrays;
 import com.yzey1.DataTuple.*;
+import org.apache.flink.api.common.serialization.SimpleStringEncoder;
+import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
+import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
+import org.apache.flink.core.fs.Path;
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -56,7 +63,8 @@ public class StreamingJob {
 
 		// read data
 		String inputPath = "src/main/resources/data";
-		DataStream<String> inputData = env.readTextFile(inputPath+"/ops_test.txt");
+		// data source
+		DataStreamSource<String> inputData = env.readTextFile(inputPath+"/ops_init.txt");
 
 		// parse line
 		SingleOutputStreamOperator<Tuple2<String, DataTuple>> inputData1 = inputData.process(new splitStream());
@@ -74,21 +82,30 @@ public class StreamingJob {
 		DataStream<Tuple2<String, DataTuple>> processedCustomer = processedNation.connect(customer)
 				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
 				.process(new CustomerProcessFunction());
-		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
-				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
-				.process(new OrdersProcessFunction());
-		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
-				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
-				.process(new LineitemProcessFunction());
+//		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
+//				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
+//				.process(new OrdersProcessFunction());
+//		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
+//				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
+//				.process(new LineitemProcessFunction());
 
 		// aggregate the results
-		DataStream<Double> result = processedLineitem.keyBy(t -> t.f1.pk_value)
-				.process(new AggregationProcessFunction());
+//		DataStream<Double> result = processedLineitem.keyBy(t -> t.f1.pk_value)
+//				.process(new AggregationProcessFunction());
 
-		// print the result each time
-//		inputData1.print();
-//		processedCustomer.print();
-		result.print();
+		// print the results
+		processedCustomer.print();
+
+		// write the results to a file
+//		String output_path = "src/main/resources/data/output.txt";
+//		StreamingFileSink<String> sink = StreamingFileSink
+//				.<String>forRowFormat(new Path(output_path), new SimpleStringEncoder<>("UTF-8"))
+//				.build();
+//		result.map(data -> data.toString())
+//				.addSink(sink);
+
+//		DataStreamSink<Tuple2<String, DataTuple>> sink = processedCustomer.writeAsText(output_path, FileSystem.WriteMode.OVERWRITE);
+//		sink.setParallelism(1);
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
@@ -124,7 +141,7 @@ public class StreamingJob {
 				default:
 					return;
 			}
-			System.out.println("Processing: " + op + " " + table + " " + dt);
+//			System.out.println("Processing: " + op + " " + table + " " + dt.pk_value);
 			ctx.output(outputTag, new Tuple2<>(op, dt));
 		}
 	}

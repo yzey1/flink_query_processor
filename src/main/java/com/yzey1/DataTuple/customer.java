@@ -21,8 +21,8 @@ public class customer extends DataTuple {
         for (int i = 0; i < FIELD_NAMES.length; i++) {
             setField(FIELD_NAMES[i], data[i]);
         }
-        this.pk_value = getField(PRIMARY_KEY).toString();
-        this.fk_value = getField(FOREIGN_KEY).toString();
+        setPk_value(getField(PRIMARY_KEY).toString());
+        setFk_value(getField(FOREIGN_KEY).toString());
     }
 
     public customer(customer c){
