@@ -90,7 +90,7 @@ public class StreamingJob {
 				.process(new LineitemProcessFunction());
 
 		// aggregate the results
-		DataStream<Double> result = processedLineitem.keyBy(t -> t.f1.pk_value)
+		DataStream<String> result = processedLineitem.keyBy(t -> t.f1.pk_value)
 				.process(new AggregationProcessFunction());
 
 		// print the results
@@ -101,8 +101,7 @@ public class StreamingJob {
 		StreamingFileSink<String> sink = StreamingFileSink
 				.<String>forRowFormat(new Path(output_path), new SimpleStringEncoder<>("UTF-8"))
 				.build();
-		result.map(data -> data.toString())
-				.addSink(sink);
+		result.addSink(sink);
 
 //		DataStreamSink<Tuple2<String, DataTuple>> sink = processedCustomer.writeAsText(output_path, FileSystem.WriteMode.OVERWRITE);
 //		sink.setParallelism(1);

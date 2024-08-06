@@ -9,6 +9,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
 import org.apache.flink.util.Collector;
 
+import java.sql.ClientInfoStatus;
 import java.util.HashSet;
 import java.util.Objects;
 
@@ -35,7 +36,7 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
     public void processElement1(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
 
         String op_type = value.f0;
-        DataTuple tuple = value.f1;
+        order tuple = (order) value.f1;
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
@@ -43,18 +44,20 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
             prevTuple.update(null);
         }
 
-        if (op_type.equals("+")){
-            prevTuple.update((order) tuple);
+        if (aliveCount.value().equals(0) && op_type.equals("+")){
+            prevTuple.update(tuple);
             aliveCount.update(aliveCount.value() + 1);
-
-        } else if (op_type.equals("-")) {
-            prevTuple.update(null);
-            aliveCount.update(aliveCount.value() - 1);
+            for (lineitem l : aliveTuples.value()) {
+                out.collect(new Tuple2<>(op_type, getJoinedLineitem(tuple, l)));
+            }
         }
 
-        for (lineitem l : aliveTuples.value()) {
-            out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), l)));
-//            System.out.println("Outputting: " + l.pk_value);
+        if (aliveCount.value().equals(1) && op_type.equals("-")){
+            prevTuple.update(null);
+            aliveCount.update(aliveCount.value() - 1);
+            for (lineitem l : aliveTuples.value()) {
+                out.collect(new Tuple2<>(op_type, getJoinedLineitem(tuple, l)));
+            }
         }
     }
 
@@ -62,34 +65,24 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
     public void processElement2(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
 
         String op_type = value.f0;
-        DataTuple tuple = value.f1;
+        lineitem tuple = (lineitem) value.f1;
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
-        }
-        if (aliveCount.value() == null) {
             aliveCount.update(0);
+            prevTuple.update(null);
         }
-
-//        String ID = tuple.getField("L_ORDERKEY").toString();
-//        System.out.println("process element lineitem in lineitem process function");
-//        System.out.println(ID);
-//        System.out.println(aliveCount.value());
 
         if (checkCondition(tuple)) {
             if (op_type.equals("+")){
-                aliveTuples.value().add((lineitem) tuple);
-//                System.out.println("Adding: " + tuple.pk_value);
+                aliveTuples.value().add(tuple);
                 if (aliveCount.value() == 1) {
-                    lineitem newoutput = getJoinedLineitem(prevTuple.value(), (lineitem) tuple);
-                    out.collect(new Tuple2<>(op_type, newoutput));
+                    out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), tuple)));
                 }
             } else if (op_type.equals("-")) {
-                aliveTuples.value().remove((lineitem) tuple);
-//                System.out.println("Removing: " + tuple.pk_value);
+                aliveTuples.value().remove(tuple);
                 if (aliveCount.value() == 1) {
-                    lineitem newoutput = getJoinedLineitem(prevTuple.value(), (lineitem) tuple);
-                    out.collect(new Tuple2<>(op_type, newoutput));
+                    out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), tuple)));
                 }
             }
         }

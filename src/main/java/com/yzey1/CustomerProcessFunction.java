@@ -37,7 +37,7 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
     public void processElement1(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
 
         String op_type = value.f0;
-        DataTuple tuple = value.f1;
+        nation tuple = (nation) value.f1;
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
@@ -45,19 +45,23 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
             prevTuple.update(null);
         }
 
-        if (op_type.equals("+")){
+        if (aliveCount.value().equals(0) && op_type.equals("+")){
             prevTuple.update((nation) tuple);
             aliveCount.update(aliveCount.value() + 1);
+            for (customer c : aliveTuples.value()) {
+                out.collect(new Tuple2<>(op_type, getJoinedCustomer(tuple, c)));
+            }
+        }
 
-        } else if (op_type.equals("-")) {
+        if (aliveCount.value().equals(1) && op_type.equals("-")){
             prevTuple.update(null);
             aliveCount.update(aliveCount.value() - 1);
+            for (customer c : aliveTuples.value()) {
+                out.collect(new Tuple2<>(op_type, getJoinedCustomer(tuple, c)));
+            }
         }
 
-        for (customer c : aliveTuples.value()) {
-            out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), c)));
-            System.out.println("Outputting: " + c.pk_value);
-        }
+
 
     }
 
@@ -65,7 +69,7 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
     public void processElement2(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
 
         String op_type = value.f0;
-        DataTuple tuple = value.f1;
+        customer tuple = (customer) value.f1;
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
@@ -75,27 +79,22 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
 
         if (checkCondition(tuple)) {
             if (op_type.equals("+")){
-                aliveTuples.value().add((customer) tuple);
-                System.out.println("Adding: " + tuple.pk_value);
+                aliveTuples.value().add(tuple);
                 if (aliveCount.value() == 1) {
-                    customer newoutput = getJoinedCustomer(prevTuple.value(), (customer) tuple);
-                    out.collect(new Tuple2<>(op_type, newoutput));
+                    out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), tuple)));
                 }
             } else if (op_type.equals("-")) {
-                aliveTuples.value().remove((customer) tuple);
-                System.out.println("Removing: " + tuple.pk_value);
+                aliveTuples.value().remove(tuple);
                 if (aliveCount.value() == 1) {
-                    customer newoutput = getJoinedCustomer(prevTuple.value(), (customer) tuple);
-                    out.collect(new Tuple2<>(op_type, newoutput));
+                    out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), tuple)));
                 }
             }
         }
     }
 
     public customer getJoinedCustomer(nation n, customer c) {
-        customer newCustomer = new customer(c);
-        newCustomer.setField("N_NAME", n.getField("N_NAME"));
-        return newCustomer;
+        c.setField("N_NAME", n.getField("N_NAME"));
+        return c;
     }
 
 }

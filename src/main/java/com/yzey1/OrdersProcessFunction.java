@@ -54,7 +54,7 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
     public void processElement1(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
 
         String op_type = value.f0;
-        DataTuple tuple = value.f1;
+        customer tuple = (customer) value.f1;
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
@@ -62,18 +62,20 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
             prevTuple.update(null);
         }
 
-        if (op_type.equals("+")){
+        if (aliveCount.value().equals(0) && op_type.equals("+")){
             prevTuple.update((customer) tuple);
             aliveCount.update(aliveCount.value() + 1);
-
-        } else if (op_type.equals("-")) {
-            prevTuple.update(null);
-            aliveCount.update(aliveCount.value() - 1);
+            for (order o : aliveTuples.value()) {
+                out.collect(new Tuple2<>(op_type, getJoinedOrder(tuple, o)));
+            }
         }
 
-        for (order o : aliveTuples.value()) {
-            out.collect(new Tuple2<>(op_type, getJoinedOrder(prevTuple.value(), o)));
-//            System.out.println("Outputting: " + o.pk_value);
+        if (aliveCount.value().equals(1) && op_type.equals("-")){
+            prevTuple.update(null);
+            aliveCount.update(aliveCount.value() - 1);
+            for (order o : aliveTuples.value()) {
+                out.collect(new Tuple2<>(op_type, getJoinedOrder(tuple, o)));
+            }
         }
 
     }
@@ -82,7 +84,7 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
     public void processElement2(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
 
         String op_type = value.f0;
-        DataTuple tuple = value.f1;
+        order tuple = (order) value.f1;
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
@@ -91,24 +93,16 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
             aliveCount.update(0);
         }
 
-//        System.out.println("process element order in order process function");
-//        System.out.println(value.f1.getField("O_ORDERKEY"));
-//        System.out.println(aliveCount.value());
-
         if (checkCondition(tuple)) {
             if (op_type.equals("+")){
-                aliveTuples.value().add((order) tuple);
-//                System.out.println("Adding: " + tuple.pk_value);
+                aliveTuples.value().add(tuple);
                 if (aliveCount.value() == 1) {
-                    order newoutput = getJoinedOrder(prevTuple.value(), (order) tuple);
-                    out.collect(new Tuple2<>(op_type, newoutput));
+                    out.collect(new Tuple2<>(op_type, getJoinedOrder(prevTuple.value(), tuple)));
                 }
             } else if (op_type.equals("-")) {
-                aliveTuples.value().remove((order) tuple);
-//                System.out.println("Removing: " + tuple.pk_value);
+                aliveTuples.value().remove(tuple);
                 if (aliveCount.value() == 1) {
-                    order newoutput = getJoinedOrder(prevTuple.value(), (order) tuple);
-                    out.collect(new Tuple2<>(op_type, newoutput));
+                    out.collect(new Tuple2<>(op_type, getJoinedOrder(prevTuple.value(), tuple)));
                 }
             }
         }

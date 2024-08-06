@@ -10,7 +10,7 @@ import org.apache.flink.util.Collector;
 import java.util.Arrays;
 import java.util.List;
 
-public class AggregationProcessFunction extends KeyedProcessFunction<String, Tuple2<String, DataTuple>, Double> {
+public class AggregationProcessFunction extends KeyedProcessFunction<String, Tuple2<String, DataTuple>, String> {
 
     ValueState<Double> currentValue;
     List<String> groupByFields = Arrays.asList("C_CUSTKEY", "C_NAME", "C_ACCTBAL", "C_PHONE", "N_NAME", "C_ADDRESS", "C_COMMENT");
@@ -22,7 +22,7 @@ public class AggregationProcessFunction extends KeyedProcessFunction<String, Tup
     }
 
     @Override
-    public void processElement(Tuple2<String, DataTuple> value, Context ctx, Collector<Double> out) throws Exception {
+    public void processElement(Tuple2<String, DataTuple> value, Context ctx, Collector<String> out) throws Exception {
 
         String op_type = value.f0;
         DataTuple tuple = value.f1;
@@ -41,6 +41,13 @@ public class AggregationProcessFunction extends KeyedProcessFunction<String, Tup
             currentValue.update(currentValue.value() - delta);
         }
 
-        out.collect(currentValue.value());
+        // concat each field value in groupByFields and the delta revenue and current revenue
+        StringBuilder result = new StringBuilder();
+        for (String field : groupByFields) {
+            result.append(field).append(": ").append(tuple.getField(field)).append(",");
+        }
+        result.append("Delta revenue: ").append(delta).append(",").append("Current revenue: ").append(currentValue.value());
+
+        out.collect(result.toString());
     }
 }
