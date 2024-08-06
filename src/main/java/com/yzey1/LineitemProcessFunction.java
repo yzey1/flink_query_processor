@@ -54,7 +54,7 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
 
         for (lineitem l : aliveTuples.value()) {
             out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), l)));
-            System.out.println("Outputting: " + l.pk_value);
+//            System.out.println("Outputting: " + l.pk_value);
         }
     }
 
@@ -79,14 +79,14 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
         if (checkCondition(tuple)) {
             if (op_type.equals("+")){
                 aliveTuples.value().add((lineitem) tuple);
-                System.out.println("Adding: " + tuple.pk_value);
+//                System.out.println("Adding: " + tuple.pk_value);
                 if (aliveCount.value() == 1) {
                     lineitem newoutput = getJoinedLineitem(prevTuple.value(), (lineitem) tuple);
                     out.collect(new Tuple2<>(op_type, newoutput));
                 }
             } else if (op_type.equals("-")) {
                 aliveTuples.value().remove((lineitem) tuple);
-                System.out.println("Removing: " + tuple.pk_value);
+//                System.out.println("Removing: " + tuple.pk_value);
                 if (aliveCount.value() == 1) {
                     lineitem newoutput = getJoinedLineitem(prevTuple.value(), (lineitem) tuple);
                     out.collect(new Tuple2<>(op_type, newoutput));

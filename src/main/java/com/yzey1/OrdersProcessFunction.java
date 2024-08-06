@@ -73,7 +73,7 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
 
         for (order o : aliveTuples.value()) {
             out.collect(new Tuple2<>(op_type, getJoinedOrder(prevTuple.value(), o)));
-            System.out.println("Outputting: " + o.pk_value);
+//            System.out.println("Outputting: " + o.pk_value);
         }
 
     }
@@ -98,14 +98,14 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
         if (checkCondition(tuple)) {
             if (op_type.equals("+")){
                 aliveTuples.value().add((order) tuple);
-                System.out.println("Adding: " + tuple.pk_value);
+//                System.out.println("Adding: " + tuple.pk_value);
                 if (aliveCount.value() == 1) {
                     order newoutput = getJoinedOrder(prevTuple.value(), (order) tuple);
                     out.collect(new Tuple2<>(op_type, newoutput));
                 }
             } else if (op_type.equals("-")) {
                 aliveTuples.value().remove((order) tuple);
-                System.out.println("Removing: " + tuple.pk_value);
+//                System.out.println("Removing: " + tuple.pk_value);
                 if (aliveCount.value() == 1) {
                     order newoutput = getJoinedOrder(prevTuple.value(), (order) tuple);
                     out.collect(new Tuple2<>(op_type, newoutput));

@@ -82,27 +82,27 @@ public class StreamingJob {
 		DataStream<Tuple2<String, DataTuple>> processedCustomer = processedNation.connect(customer)
 				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
 				.process(new CustomerProcessFunction());
-//		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
-//				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
-//				.process(new OrdersProcessFunction());
-//		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
-//				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
-//				.process(new LineitemProcessFunction());
+		DataStream<Tuple2<String, DataTuple>> processedOrder = processedCustomer.connect(orders)
+				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
+				.process(new OrdersProcessFunction());
+		DataStream<Tuple2<String, DataTuple>> processedLineitem = processedOrder.connect(lineitem)
+				.keyBy(t -> t.f1.pk_value, t -> t.f1.fk_value)
+				.process(new LineitemProcessFunction());
 
 		// aggregate the results
-//		DataStream<Double> result = processedLineitem.keyBy(t -> t.f1.pk_value)
-//				.process(new AggregationProcessFunction());
+		DataStream<Double> result = processedLineitem.keyBy(t -> t.f1.pk_value)
+				.process(new AggregationProcessFunction());
 
 		// print the results
-		processedCustomer.print();
+		processedLineitem.print();
 
 		// write the results to a file
-//		String output_path = "src/main/resources/data/output.txt";
-//		StreamingFileSink<String> sink = StreamingFileSink
-//				.<String>forRowFormat(new Path(output_path), new SimpleStringEncoder<>("UTF-8"))
-//				.build();
-//		result.map(data -> data.toString())
-//				.addSink(sink);
+		String output_path = "src/main/resources/data";
+		StreamingFileSink<String> sink = StreamingFileSink
+				.<String>forRowFormat(new Path(output_path), new SimpleStringEncoder<>("UTF-8"))
+				.build();
+		result.map(data -> data.toString())
+				.addSink(sink);
 
 //		DataStreamSink<Tuple2<String, DataTuple>> sink = processedCustomer.writeAsText(output_path, FileSystem.WriteMode.OVERWRITE);
 //		sink.setParallelism(1);
