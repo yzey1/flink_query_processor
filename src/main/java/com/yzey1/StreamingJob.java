@@ -82,12 +82,13 @@ public class StreamingJob {
 				.process(new LineitemProcessFunction());
 
 		// aggregate the results
-//		DataStream<Tuple2<String, DataTuple>> result = processedLineitem.keyBy(t -> t.f1.fk_value)
-//				.process(new AggregationProcessFunction());
+		DataStream<Double> result = processedLineitem.keyBy(t -> t.f1.pk_value)
+				.process(new AggregationProcessFunction());
 
 		// print the result each time
-		processedCustomer.print();
-//		result.print();
+//		inputData1.print();
+//		processedCustomer.print();
+		result.print();
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");

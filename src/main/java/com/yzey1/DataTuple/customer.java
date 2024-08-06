@@ -13,6 +13,8 @@ public class customer extends DataTuple {
     };
     public static final String PRIMARY_KEY = "C_CUSTKEY";
     public static final String FOREIGN_KEY = "C_NATIONKEY";
+//    public String pk_value;
+//    public String fk_value;
 
     public customer(Object[] data){
         super(PRIMARY_KEY, FOREIGN_KEY);

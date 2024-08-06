@@ -24,6 +24,7 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
     public ValueState<HashSet<order>> aliveTuples;
     public ValueState<Integer> aliveCount;
     public ValueState<customer> prevTuple;
+
     public SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     public String DATE = "1993-10-01";
 
@@ -55,6 +56,9 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
         String op_type = value.f0;
         DataTuple tuple = value.f1;
 
+        if (aliveTuples.value() == null) {
+            aliveTuples.update(new HashSet<>());
+        }
         if (aliveCount.value() == null) {
             aliveCount.update(0);
         }
@@ -72,11 +76,11 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
             aliveCount.update(0);
         }
 
-        if (aliveTuples.value() != null) {
-            for (order o : aliveTuples.value()) {
-                out.collect(new Tuple2<>(op_type, getJoinedOrder(prevTuple.value(), o)));
-            }
+//        if (aliveTuples.value() != null) {
+        for (order o : aliveTuples.value()) {
+            out.collect(new Tuple2<>(op_type, getJoinedOrder(prevTuple.value(), o)));
         }
+//        }
 
     }
 

@@ -8,8 +8,8 @@ public abstract class DataTuple {
     public String PRIMARY_KEY;
     public String FOREIGN_KEY;
     public Map<String, Object> fields;
-    public String pk_value;
-    public String fk_value;
+    public String pk_value = "";
+    public String fk_value = "";
 
     public DataTuple(String primary_key, String foreign_key) {
         this.PRIMARY_KEY = primary_key;

@@ -43,6 +43,9 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
         if (aliveCount.value() == null) {
             aliveCount.update(0);
         }
+        if (aliveTuples.value() == null) {
+            aliveTuples.update(new HashSet<>());
+        }
 
         System.out.println("process element 1");
         System.out.println(value.f1.getField("N_NAME"));
@@ -57,11 +60,11 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
             aliveCount.update(0);
         }
 
-        if (aliveTuples.value() != null) {
-            for (lineitem l : aliveTuples.value()) {
-                out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), l)));
-            }
+//        if (aliveTuples.value() != null) {
+        for (lineitem l : aliveTuples.value()) {
+            out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), l)));
         }
+//        }
     }
 
     @Override

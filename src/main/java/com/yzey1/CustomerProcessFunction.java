@@ -42,6 +42,9 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
         if (aliveCount.value() == null) {
             aliveCount.update(0);
         }
+        if (aliveTuples.value() == null) {
+            aliveTuples.update(new HashSet<>());
+        }
 
         System.out.println("process element 1");
         System.out.println(value.f1.getField("N_NAME"));
@@ -56,11 +59,11 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
             aliveCount.update(0);
         }
 
-        if (aliveTuples.value() != null) {
-            for (customer c : aliveTuples.value()) {
-                out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), c)));
-            }
+//        if (aliveTuples.value() != null) {
+        for (customer c : aliveTuples.value()) {
+            out.collect(new Tuple2<>(op_type, getJoinedCustomer(prevTuple.value(), c)));
         }
+//        }
 
     }
 
@@ -92,10 +95,10 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
 
     }
 
-    public customer getJoinedCustomer(nation nation, customer customer) {
-        customer joinedCustomer = new customer(customer);
-        joinedCustomer.setField("N_NAME", nation.getField("N_NAME"));
-        return joinedCustomer;
+    public customer getJoinedCustomer(nation n, customer c) {
+        c.setField("N_NAME", n.getField("N_NAME"));
+        c.pk_value = c.getField("C_CUSTKEY").toString();
+        return c;
     }
 
 }

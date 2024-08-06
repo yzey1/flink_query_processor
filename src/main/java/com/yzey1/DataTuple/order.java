@@ -15,10 +15,11 @@ public class order extends DataTuple {
     public static final String PRIMARY_KEY = "O_ORDERKEY";
     public static final String FOREIGN_KEY = "O_CUSTKEY";
     public String fk_value;
+    public String pk_value;
 
-    public order(){
-        super(PRIMARY_KEY, FOREIGN_KEY);
-    }
+//    public order(){
+//        super(PRIMARY_KEY, FOREIGN_KEY);
+//    }
 
     public order(Object[] data){
         super(PRIMARY_KEY, FOREIGN_KEY);
