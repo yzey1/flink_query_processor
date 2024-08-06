@@ -44,9 +44,9 @@ public class AggregationProcessFunction extends KeyedProcessFunction<String, Tup
         // concat each field value in groupByFields and the delta revenue and current revenue
         StringBuilder result = new StringBuilder();
         for (String field : groupByFields) {
-            result.append(field).append(": ").append(tuple.getField(field)).append(",");
+            result.append(tuple.getField(field)).append(",");
         }
-        result.append("Delta revenue: ").append(delta).append(",").append("Current revenue: ").append(currentValue.value());
+        result.append(delta).append(",").append(currentValue.value());
 
         out.collect(result.toString());
     }

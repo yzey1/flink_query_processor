@@ -64,7 +64,7 @@ public class StreamingJob {
 		// read data
 		String inputPath = "src/main/resources/data";
 		// data source
-		DataStreamSource<String> inputData = env.readTextFile(inputPath+"/ops_init.txt");
+		DataStreamSource<String> inputData = env.readTextFile(inputPath+"/ops_all.txt");
 
 		// parse line
 		SingleOutputStreamOperator<Tuple2<String, DataTuple>> inputData1 = inputData.process(new splitStream());
