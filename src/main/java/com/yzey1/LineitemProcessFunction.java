@@ -9,8 +9,9 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
 import org.apache.flink.util.Collector;
 
-import java.sql.ClientInfoStatus;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 
 
@@ -96,6 +97,21 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
         l.setField("C_ADDRESS", o.getField("C_ADDRESS"));
         l.setField("C_PHONE", o.getField("C_PHONE"));
         l.setField("C_COMMENT", o.getField("C_COMMENT"));
+
+        List<String> groupByFields = Arrays.asList("C_CUSTKEY", "C_NAME", "C_ACCTBAL", "C_ADDRESS", "N_NAME", "C_PHONE", "C_COMMENT");
+        // set the foreign key value to the concatenated string of the group by fields
+        StringBuilder concatenatedFields = new StringBuilder();
+        for (String field : groupByFields) {
+            String v = (String) l.getField(field);
+            concatenatedFields.append(field).append(",");
+        }
+        // Remove the trailing comma
+        if (concatenatedFields.length() > 0) {
+            concatenatedFields.setLength(concatenatedFields.length() - 1);
+        }
+        String output_fields = concatenatedFields.toString();
+        l.setField("output_fileds", output_fields);
+
         return l;
     }
 

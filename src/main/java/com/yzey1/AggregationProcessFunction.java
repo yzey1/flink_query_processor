@@ -8,12 +8,13 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class AggregationProcessFunction extends KeyedProcessFunction<String, Tuple2<String, DataTuple>, String> {
 
     ValueState<Double> currentValue;
-    List<String> groupByFields = Arrays.asList("C_CUSTKEY", "C_NAME", "C_ACCTBAL", "C_PHONE", "N_NAME", "C_ADDRESS", "C_COMMENT");
+    List<String> groupByFields = Arrays.asList("C_CUSTKEY", "C_NAME", "C_ACCTBAL", "C_ADDRESS", "N_NAME", "C_PHONE", "C_COMMENT");
     String aggregationField = "revenue";
 
     @Override
@@ -41,13 +42,17 @@ public class AggregationProcessFunction extends KeyedProcessFunction<String, Tup
             currentValue.update(currentValue.value() - delta);
         }
 
-        // concat each field value in groupByFields and the delta revenue and current revenue
-        StringBuilder result = new StringBuilder();
+        // Use HashMap to store the groupByFields and the delta revenue and current revenue
+        HashMap<String, Object> resultMap = new HashMap<>();
         for (String field : groupByFields) {
-            result.append(tuple.getField(field)).append(",");
+            resultMap.put(field, tuple.getField(field));
         }
-        result.append(delta).append(",").append(currentValue.value());
+        resultMap.put("deltaRevenue", delta);
+        resultMap.put("currentRevenue", currentValue.value());
 
-        out.collect(result.toString());
+        // Convert HashMap to string representation
+        String result = resultMap.toString();
+        out.collect(result);
+
     }
 }

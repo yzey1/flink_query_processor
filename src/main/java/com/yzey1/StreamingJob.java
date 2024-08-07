@@ -90,7 +90,7 @@ public class StreamingJob {
 				.process(new LineitemProcessFunction());
 
 		// aggregate the results
-		DataStream<String> result = processedLineitem.keyBy(t -> t.f1.pk_value)
+		DataStream<String> result = processedLineitem.keyBy(t -> t.f1.getField("output_fileds").toString())
 				.process(new AggregationProcessFunction());
 
 		// print the results
