@@ -103,7 +103,7 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
         StringBuilder concatenatedFields = new StringBuilder();
         for (String field : groupByFields) {
             String v = (String) l.getField(field);
-            concatenatedFields.append(field).append(",");
+            concatenatedFields.append(v).append(",");
         }
         // Remove the trailing comma
         if (concatenatedFields.length() > 0) {

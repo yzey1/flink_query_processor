@@ -18,11 +18,21 @@
 
 package com.yzey1;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
 import com.yzey1.DataTuple.*;
+import org.apache.flink.api.common.serialization.Encoder;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
+import org.apache.flink.api.java.io.CsvOutputFormat;
 import org.apache.flink.api.java.operators.DataSource;
+import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple9;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
@@ -30,10 +40,16 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
+import org.apache.flink.streaming.api.functions.sink.filesystem.bucketassigners.DateTimeBucketAssigner;
+import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.DefaultRollingPolicy;
+import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy;
+import org.apache.flink.types.Row;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 import org.apache.flink.core.fs.Path;
+
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -64,7 +80,7 @@ public class StreamingJob {
 		// read data
 		String inputPath = "src/main/resources/data";
 		// data source
-		DataStreamSource<String> inputData = env.readTextFile(inputPath+"/ops_all.txt");
+		DataStreamSource<String> inputData = env.readTextFile(inputPath+"/ops_init.txt");
 
 		// parse line
 		SingleOutputStreamOperator<Tuple2<String, DataTuple>> inputData1 = inputData.process(new splitStream());
@@ -90,21 +106,28 @@ public class StreamingJob {
 				.process(new LineitemProcessFunction());
 
 		// aggregate the results
-		DataStream<String> result = processedLineitem.keyBy(t -> t.f1.getField("output_fileds").toString())
+		DataStream<Tuple9<String, String, Double, String, String, String, String, Double, Double>> result = processedLineitem
+				.keyBy(t -> t.f1.getField("output_fileds").toString())
 				.process(new AggregationProcessFunction());
 
 		// print the results
-		processedLineitem.print();
+		processedLineitem.map(t -> t.f1.getField("output_fileds").toString()).print();
 
 		// write the results to a file
-		String output_path = "src/main/resources/data";
-		StreamingFileSink<String> sink = StreamingFileSink
-				.<String>forRowFormat(new Path(output_path), new SimpleStringEncoder<>("UTF-8"))
-				.build();
-		result.addSink(sink);
+		String output_path = "output";
 
-//		DataStreamSink<Tuple2<String, DataTuple>> sink = processedCustomer.writeAsText(output_path, FileSystem.WriteMode.OVERWRITE);
-//		sink.setParallelism(1);
+		StreamingFileSink<String> sink = StreamingFileSink
+				.forRowFormat(new Path(output_path), new SimpleStringEncoder<String>("UTF-8"))
+				.withRollingPolicy(DefaultRollingPolicy.builder()
+						.withRolloverInterval(TimeUnit.MINUTES.toMillis(15))
+						.withInactivityInterval(TimeUnit.MINUTES.toMillis(5))
+						.build())
+				.build();
+
+		result.map(t ->convertTupleToString(t)).addSink(sink);
+
+//		String outputPath = "src/main/resources/data/output.csv";
+//		result.writeAsCsv(outputPath, FileSystem.WriteMode.OVERWRITE);
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
@@ -143,5 +166,21 @@ public class StreamingJob {
 //			System.out.println("Processing: " + op + " " + table + " " + dt.pk_value);
 			ctx.output(outputTag, new Tuple2<>(op, dt));
 		}
+	}
+
+	public static String convertTupleToString(Tuple9<String, String, Double, String, String, String, String, Double, Double> tuple) {
+		// handle with null values
+		String str = "";
+		for (int i = 0; i < tuple.getArity(); i++) {
+			if (tuple.getField(i) == null) {
+				str += "null";
+			} else {
+				str += tuple.getField(i).toString();
+			}
+			if (i < tuple.getArity() - 1) {
+				str += "|";
+			}
+		}
+		return str;
 	}
 }
