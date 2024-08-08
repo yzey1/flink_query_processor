@@ -63,7 +63,7 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
         }
 
         if (aliveCount.value().equals(0) && op_type.equals("+")){
-            prevTuple.update((customer) tuple);
+            prevTuple.update(tuple);
             aliveCount.update(aliveCount.value() + 1);
             for (order o : aliveTuples.value()) {
                 out.collect(new Tuple2<>(op_type, getJoinedOrder(tuple, o)));

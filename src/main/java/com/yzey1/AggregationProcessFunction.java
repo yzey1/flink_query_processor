@@ -16,10 +16,10 @@ public class AggregationProcessFunction extends KeyedProcessFunction<String, Tup
 
     ValueState<Double> currentValue;
     List<String> groupByFields = Arrays.asList("C_CUSTKEY", "C_NAME", "C_ACCTBAL", "C_ADDRESS", "N_NAME", "C_PHONE", "C_COMMENT");
-    String aggregationField = "revenue";
+
 
     @Override
-    public void open(org.apache.flink.configuration.Configuration parameters) throws Exception {
+    public void open(org.apache.flink.configuration.Configuration parameters) {
         currentValue = getRuntimeContext().getState(new ValueStateDescriptor<>("Old Value", Double.class));
     }
 
@@ -51,10 +51,6 @@ public class AggregationProcessFunction extends KeyedProcessFunction<String, Tup
         resultMap.put("deltaRevenue", delta);
         resultMap.put("currentRevenue", currentValue.value());
 
-//        // Convert HashMap to string representation
-//        String result = resultMap.toString();
-//        out.collect(result);
-
         // Convert HashMap to tuple representation (for output csv)
         Tuple9<String, String, Double, String, String, String, String, Double, Double> result = new Tuple9<>(
                 resultMap.get("C_CUSTKEY").toString(),
@@ -67,13 +63,8 @@ public class AggregationProcessFunction extends KeyedProcessFunction<String, Tup
                 (Double) resultMap.get("deltaRevenue"),
                 (Double) resultMap.get("currentRevenue")
         );
-        // covert Tuple9 to string
-        String str_result = result.toString();
-        // remove the parentheses
-        str_result = str_result.substring(1, str_result.length() - 1);
 
         out.collect(result);
-
 
     }
 }

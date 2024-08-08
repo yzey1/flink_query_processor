@@ -18,34 +18,21 @@
 
 package com.yzey1;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import com.yzey1.DataTuple.*;
-import org.apache.flink.api.common.serialization.Encoder;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
-import org.apache.flink.api.java.io.CsvOutputFormat;
-import org.apache.flink.api.java.operators.DataSource;
-import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple9;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
-import org.apache.flink.streaming.api.functions.sink.filesystem.bucketassigners.DateTimeBucketAssigner;
 import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.DefaultRollingPolicy;
-import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.OnCheckpointRollingPolicy;
-import org.apache.flink.types.Row;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 import org.apache.flink.core.fs.Path;
@@ -124,7 +111,7 @@ public class StreamingJob {
 						.build())
 				.build();
 
-		result.map(t ->convertTupleToString(t)).addSink(sink);
+		result.map(StreamingJob::convertTupleToString).addSink(sink);
 
 //		String outputPath = "src/main/resources/data/output.csv";
 //		result.writeAsCsv(outputPath, FileSystem.WriteMode.OVERWRITE);
@@ -136,7 +123,7 @@ public class StreamingJob {
 
 	private static class splitStream extends ProcessFunction<String, Tuple2<String, DataTuple>> {
 		@Override
-		public void processElement(String value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
+		public void processElement(String value, Context ctx, Collector<Tuple2<String, DataTuple>> out) {
 			String[] split_line = value.split("\\|");
 			String op = split_line[0];
 			String table = split_line[1];
@@ -170,17 +157,17 @@ public class StreamingJob {
 
 	public static String convertTupleToString(Tuple9<String, String, Double, String, String, String, String, Double, Double> tuple) {
 		// handle with null values
-		String str = "";
+		StringBuilder str = new StringBuilder();
 		for (int i = 0; i < tuple.getArity(); i++) {
 			if (tuple.getField(i) == null) {
-				str += "null";
+				str.append("null");
 			} else {
-				str += tuple.getField(i).toString();
+				str.append(tuple.getField(i).toString());
 			}
 			if (i < tuple.getArity() - 1) {
-				str += "|";
+				str.append("|");
 			}
 		}
-		return str;
+		return str.toString();
 	}
 }

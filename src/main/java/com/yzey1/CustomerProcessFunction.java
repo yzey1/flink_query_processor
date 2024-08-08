@@ -13,7 +13,6 @@ import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
 import org.apache.flink.util.Collector;
 
 import java.util.HashSet;
-import java.util.Map;
 
 public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tuple2<String, DataTuple>, Tuple2<String, DataTuple>, Tuple2<String, DataTuple>> {
 
@@ -46,7 +45,7 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
         }
 
         if (aliveCount.value().equals(0) && op_type.equals("+")){
-            prevTuple.update((nation) tuple);
+            prevTuple.update(tuple);
             aliveCount.update(aliveCount.value() + 1);
             for (customer c : aliveTuples.value()) {
                 out.collect(new Tuple2<>(op_type, getJoinedCustomer(tuple, c)));
@@ -60,9 +59,6 @@ public class CustomerProcessFunction extends KeyedCoProcessFunction<String, Tupl
                 out.collect(new Tuple2<>(op_type, getJoinedCustomer(tuple, c)));
             }
         }
-
-
-
     }
 
     @Override

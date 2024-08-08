@@ -12,7 +12,6 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
 import java.util.HashSet;
-import java.util.Set;
 
 public class NationProcessFunction extends KeyedProcessFunction<String, Tuple2<String, DataTuple>, Tuple2<String, DataTuple>> {
 
@@ -35,17 +34,17 @@ public class NationProcessFunction extends KeyedProcessFunction<String, Tuple2<S
     public void processElement(Tuple2<String, DataTuple> value, Context ctx, Collector<Tuple2<String, DataTuple>> out) throws Exception {
 //        System.out.println("Running NationProcessFunction class.");
         String op_type = value.f0;
-        DataTuple tuple = value.f1;
+        nation tuple = (nation) value.f1;
 
         if (aliveTuples.value() == null) {
             aliveTuples.update(new HashSet<>());
         }
 
-        if (checkCondition((nation) tuple)) {
+        if (checkCondition(tuple)) {
             if (op_type.equals("+")){
-                aliveTuples.value().add((nation) tuple);
+                aliveTuples.value().add(tuple);
             } else if (op_type.equals("-")) {
-                aliveTuples.value().remove((nation) tuple);
+                aliveTuples.value().remove(tuple);
             }
             out.collect(new Tuple2<>(op_type, tuple));
         }
