@@ -37,6 +37,11 @@ public abstract class DataTuple {
     public abstract String getTableName() ;
 
     @Override
+    public int hashCode() {
+        return Integer.parseInt(pk_value);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -44,8 +49,5 @@ public abstract class DataTuple {
         return Objects.equals(PRIMARY_KEY, dataTuple.PRIMARY_KEY);
     }
 
-    @Override
-    public int hashCode() {
-        return PRIMARY_KEY.hashCode();
-    }
+
 }

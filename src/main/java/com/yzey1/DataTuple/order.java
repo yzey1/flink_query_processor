@@ -38,4 +38,11 @@ public class order extends DataTuple {
         return "Orders";
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof order) {
+            return pk_value.equals(((order) obj).pk_value);
+        }
+        return false;
+    }
 }

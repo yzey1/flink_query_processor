@@ -43,7 +43,7 @@ public class lineitem extends DataTuple {
 
     @Override
     public int hashCode() {
-        return Integer.parseInt(pk_value+getField("L_PARTKEY").toString());
+        return Integer.parseInt(pk_value+getField("L_PARTKEY")+getField("L_SUPPKEY").toString());
     }
 
     @Override

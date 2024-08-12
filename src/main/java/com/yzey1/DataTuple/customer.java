@@ -44,4 +44,11 @@ public class customer extends DataTuple {
         return "Customer";
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof customer) {
+            return pk_value.equals(((customer) obj).pk_value);
+        }
+        return false;
+    }
 }

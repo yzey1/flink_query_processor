@@ -25,6 +25,7 @@ import com.yzey1.DataTuple.*;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple9;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -59,15 +60,26 @@ public class StreamingJob {
 	public static void main(String[] args) throws Exception {
 
 		// set up the streaming execution environment
-		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+//		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+		Configuration configuration = new Configuration();
+		configuration.setString("rest.port","8081");
+		StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration);
 
 		// set the parallelism to 1
 		env.setParallelism(1);
 
 		// read data
-		String inputPath = "src/main/resources/data";
+		String sf = "0.1";
+//		String input_type = "init";
+		String input_type = "update";
+		String inputPath = "tpch_datasets/data_sf"+sf+"/";
+		String filename = "ops_sf"+sf+"_"+input_type+"_0.2.txt";
+
+		String outputPath = "output";
+		String outputFilename = filename.replace(".txt", ".csv");
+
 		// data source
-		DataStreamSource<String> inputData = env.readTextFile(inputPath+"/ops_init.txt");
+		DataStreamSource<String> inputData = env.readTextFile(inputPath+"/"+ filename);
 
 		// parse line
 		SingleOutputStreamOperator<Tuple2<String, DataTuple>> inputData1 = inputData.process(new splitStream());
@@ -101,10 +113,9 @@ public class StreamingJob {
 		processedLineitem.map(t -> t.f1.getField("output_fileds").toString()).print();
 
 		// write the results to a file
-		String output_path = "output";
 
 		StreamingFileSink<String> sink = StreamingFileSink
-				.forRowFormat(new Path(output_path), new SimpleStringEncoder<String>("UTF-8"))
+				.forRowFormat(new Path(outputPath), new SimpleStringEncoder<String>("UTF-8"))
 				.withRollingPolicy(DefaultRollingPolicy.builder()
 						.withRolloverInterval(TimeUnit.MINUTES.toMillis(15))
 						.withInactivityInterval(TimeUnit.MINUTES.toMillis(5))
@@ -113,8 +124,7 @@ public class StreamingJob {
 
 		result.map(StreamingJob::convertTupleToString).addSink(sink);
 
-//		String outputPath = "src/main/resources/data/output.csv";
-//		result.writeAsCsv(outputPath, FileSystem.WriteMode.OVERWRITE);
+		result.writeAsCsv(outputPath + "/" + outputFilename, FileSystem.WriteMode.OVERWRITE);
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");

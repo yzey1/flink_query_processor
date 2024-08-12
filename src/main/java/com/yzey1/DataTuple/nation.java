@@ -29,5 +29,12 @@ public class nation extends DataTuple {
         return "Nation";
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof nation) {
+            return pk_value.equals(((nation) obj).pk_value);
+        }
+        return false;
+    }
 
 }
