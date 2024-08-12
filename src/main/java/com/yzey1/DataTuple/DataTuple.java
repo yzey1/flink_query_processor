@@ -46,8 +46,7 @@ public abstract class DataTuple {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DataTuple dataTuple = (DataTuple) o;
-        return Objects.equals(PRIMARY_KEY, dataTuple.PRIMARY_KEY);
+        return pk_value.equals(dataTuple.pk_value);
     }
-
 
 }

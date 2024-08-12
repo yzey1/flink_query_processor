@@ -43,14 +43,14 @@ public class lineitem extends DataTuple {
 
     @Override
     public int hashCode() {
-        return Integer.parseInt(pk_value+getField("L_PARTKEY")+getField("L_SUPPKEY").toString());
+        return Long.hashCode(Long.parseLong(pk_value + getField("L_PARTKEY").toString()));
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof lineitem) {
-            return pk_value.equals(((lineitem) obj).pk_value);
-        }
-        return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        lineitem lineitem = (lineitem) o;
+        return pk_value.equals(lineitem.pk_value) && getField("L_PARTKEY").equals(lineitem.getField("L_PARTKEY"));
     }
 }

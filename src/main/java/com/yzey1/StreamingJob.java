@@ -69,11 +69,11 @@ public class StreamingJob {
 		env.setParallelism(1);
 
 		// read data
-		String sf = "0.1";
+		String sf = "0.2";
 //		String input_type = "init";
 		String input_type = "update";
 		String inputPath = "tpch_datasets/data_sf"+sf+"/";
-		String filename = "ops_sf"+sf+"_"+input_type+"_0.2.txt";
+		String filename = "ops_sf"+sf+"_"+input_type+".txt";
 
 		String outputPath = "output";
 		String outputFilename = filename.replace(".txt", ".csv");
@@ -106,7 +106,7 @@ public class StreamingJob {
 
 		// aggregate the results
 		DataStream<Tuple9<String, String, Double, String, String, String, String, Double, Double>> result = processedLineitem
-				.keyBy(t -> t.f1.getField("output_fileds").toString())
+				.keyBy(t -> t.f1.getField("C_CUSTKEY").toString())
 				.process(new AggregationProcessFunction());
 
 		// print the results
@@ -160,7 +160,7 @@ public class StreamingJob {
 				default:
 					return;
 			}
-//			System.out.println("Processing: " + op + " " + table + " " + dt.pk_value);
+			System.out.println("Processing: " + op + " " + table + " " + dt.pk_value);
 			ctx.output(outputTag, new Tuple2<>(op, dt));
 		}
 	}
