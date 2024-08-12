@@ -40,7 +40,7 @@ public class OrdersProcessFunction extends KeyedCoProcessFunction<String, Tuple2
         Date orderDate = sdf.parse((String) tuple.getField("O_ORDERDATE"));
 
         // Check if the order date is between the parsed date and the date three months after
-        return orderDate.after(date) && orderDate.before(dateAfterThreeMonths);
+        return (orderDate.after(date) && orderDate.before(dateAfterThreeMonths)) || orderDate.equals(date);
     }
 
     @Override
