@@ -41,5 +41,16 @@ public class lineitem extends DataTuple {
         return "Lineitem";
     }
 
+    @Override
+    public int hashCode() {
+        return Integer.parseInt(pk_value+getField("L_PARTKEY").toString());
+    }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof lineitem) {
+            return pk_value.equals(((lineitem) obj).pk_value);
+        }
+        return false;
+    }
 }
