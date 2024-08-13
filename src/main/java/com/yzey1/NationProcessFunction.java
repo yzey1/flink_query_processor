@@ -40,13 +40,16 @@ public class NationProcessFunction extends KeyedProcessFunction<String, Tuple2<S
             aliveTuples.update(new HashSet<>());
         }
 
+        boolean isValid = false;
         if (checkCondition(tuple)) {
             if (op_type.equals("+")){
-                aliveTuples.value().add(tuple);
+                isValid = aliveTuples.value().add(tuple);
             } else if (op_type.equals("-")) {
-                aliveTuples.value().remove(tuple);
+                isValid = aliveTuples.value().remove(tuple);
             }
-            out.collect(new Tuple2<>(op_type, tuple));
+            if (isValid) {
+                out.collect(new Tuple2<>(op_type, tuple));
+            }
         }
     }
 }

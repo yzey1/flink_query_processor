@@ -76,13 +76,13 @@ public class LineitemProcessFunction extends KeyedCoProcessFunction<String, Tupl
 
         if (checkCondition(tuple)) {
             if (op_type.equals("+")){
-                aliveTuples.value().add(tuple);
-                if (aliveCount.value() == 1) {
+                boolean isAdded = aliveTuples.value().add(tuple);
+                if (aliveCount.value() == 1 && isAdded) {
                     out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), tuple)));
                 }
             } else if (op_type.equals("-")) {
-                aliveTuples.value().remove(tuple);
-                if (aliveCount.value() == 1) {
+                boolean isRemoved = aliveTuples.value().remove(tuple);
+                if (aliveCount.value() == 1 && isRemoved) {
                     out.collect(new Tuple2<>(op_type, getJoinedLineitem(prevTuple.value(), tuple)));
                 }
             }
