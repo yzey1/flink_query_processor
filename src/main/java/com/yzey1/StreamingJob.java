@@ -59,6 +59,12 @@ public class StreamingJob {
 
 	public static void main(String[] args) throws Exception {
 
+		Runtime runtime = Runtime.getRuntime();
+		// set up the streaming execution environment
+		// Record the start time
+		long initialMemory = runtime.totalMemory() - runtime.freeMemory();
+		long startTime = System.currentTimeMillis();
+
 		// set up the streaming execution environment
 //		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		Configuration configuration = new Configuration();
@@ -69,11 +75,11 @@ public class StreamingJob {
 		env.setParallelism(1);
 
 		// read data
-		String sf = "0.2";
+		String sf = "0.1";
 //		String input_type = "init";
 		String input_type = "update";
 		String inputPath = "tpch_datasets/data_sf"+sf+"/";
-		String filename = "ops_sf"+sf+"_"+input_type+".txt";
+		String filename = "ops_sf"+sf+"_"+input_type+"_1.0.txt";
 
 		String outputPath = "output";
 		String outputFilename = filename.replace(".txt", ".csv");
@@ -110,7 +116,7 @@ public class StreamingJob {
 				.process(new AggregationProcessFunction());
 
 		// print the results
-		processedLineitem.map(t -> t.f1.getField("output_fileds").toString()).print();
+//		processedLineitem.map(t -> t.f1.getField("output_fileds").toString()).print();
 
 		// write the results to a file
 
@@ -124,12 +130,25 @@ public class StreamingJob {
 
 		result.map(StreamingJob::convertTupleToString).addSink(sink);
 
-		result.writeAsCsv(outputPath + "/" + outputFilename, FileSystem.WriteMode.OVERWRITE);
+//		result.writeAsCsv(outputPath + "/" + outputFilename, FileSystem.WriteMode.OVERWRITE, "\n", "|");
 
 		// execute program
 		env.execute("Flink Streaming Java API Skeleton");
 
+		// Capture end time and final memory usage
+		long endTime = System.currentTimeMillis();
+		long finalMemory = runtime.totalMemory() - runtime.freeMemory();
+
+		// Calculate the runtime and memory consumption
+		long runtimeDuration = endTime - startTime;
+		long memoryConsumption = finalMemory - initialMemory;
+
+		// Print the results
+        System.out.println("Runtime: " + runtimeDuration + " ms");
+		System.out.println("Memory consumption: " + (memoryConsumption / (1024 * 1024)) + " MB");
+
 	}
+
 
 	private static class splitStream extends ProcessFunction<String, Tuple2<String, DataTuple>> {
 		@Override
@@ -160,7 +179,7 @@ public class StreamingJob {
 				default:
 					return;
 			}
-			System.out.println("Processing: " + op + " " + table + " " + dt.pk_value);
+//			System.out.println("Processing: " + op + " " + table + " " + dt.pk_value);
 			ctx.output(outputTag, new Tuple2<>(op, dt));
 		}
 	}
