@@ -75,11 +75,12 @@ public class StreamingJob {
 		env.setParallelism(1);
 
 		// read data
-		String sf = "0.1";
+		String sf = "0.01";
 //		String input_type = "init";
 		String input_type = "update";
-		String inputPath = "tpch_datasets/data_sf"+sf+"/";
-		String filename = "ops_sf"+sf+"_"+input_type+"_1.0.txt";
+//		String inputPath = "tpch_datasets/data_sf"+sf+"/";
+		String inputPath = "test_data/data_sf"+sf+"/";
+		String filename = "ops_sf"+sf+"_"+input_type+"_0.2.txt";
 
 		String outputPath = "output";
 		String outputFilename = filename.replace(".txt", ".csv");
@@ -145,7 +146,7 @@ public class StreamingJob {
 
 		// Print the results
         System.out.println("Runtime: " + runtimeDuration + " ms");
-		System.out.println("Memory consumption: " + (memoryConsumption / (1024 * 1024)) + " MB");
+//		System.out.println("Memory consumption: " + (memoryConsumption / (1024 * 1024)) + " MB");
 
 	}
 
